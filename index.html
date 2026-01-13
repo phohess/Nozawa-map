@@ -4,81 +4,161 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <title>野澤滑雪助手 2026</title>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>野澤滑雪助手 Pro V4</title>
+    <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
     <style>
-        :root { --primary: #2ecc71; --danger: #e74c3c; --bg: #121212; }
-        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; touch-action: manipulation; }
-        body { margin: 0; background: var(--bg); height: 100vh; overflow: hidden; font-family: -apple-system, sans-serif; }
-
-        /* 地圖區域 */
-        #viewport { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        #map-wrapper { transition: transform 0.4s cubic-bezier(0.2, 0, 0.2, 1); transform-origin: center center; position: relative; }
-        #ski-map { display: block; width: 100vw; height: auto; }
-
-        /* 透明點擊熱區 */
-        .zone { position: absolute; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
-
-        /* 下方大按鈕選單 (適合戴手套操作) */
-        .controls {
-            position: fixed; bottom: 20px; left: 10px; right: 10px;
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
-            z-index: 100;
+        :root { 
+            --primary: #2ecc71; --info: #3498db; --danger: #e74c3c; 
+            --bg: #000000; --panel: rgba(25, 25, 25, 0.9); 
         }
-        .btn {
-            background: rgba(40, 40, 40, 0.9); color: white; border: none; padding: 12px 5px;
-            border-radius: 12px; font-size: 11px; font-weight: bold; text-align: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5); backdrop-filter: blur(5px);
-        }
-        .btn:active { background: var(--primary); }
-        .btn-emergency { background: var(--danger); grid-column: span 1; }
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; touch-action: none; }
+        body { margin: 0; background: var(--bg); color: white; height: 100vh; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
 
-        /* 頂部資訊欄 */
+        /* 地圖顯示區域 */
+        #viewport { width: 100vw; height: 100vh; cursor: grab; background: #1a1a1a; position: relative; }
+        #map-element { width: 100%; position: relative; transform-origin: 0 0; }
+        #ski-map { width: 100%; display: block; filter: contrast(1.05) brightness(1.05); }
+
+        /* 透明點擊熱區 (僅感應，不顯示) */
+        .zone { position: absolute; z-index: 5; }
+
+        /* 頂部狀態列 */
         .top-bar {
-            position: fixed; top: 0; left: 0; right: 0; padding: 45px 15px 15px;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
-            color: white; z-index: 90; display: flex; justify-content: space-between; align-items: center;
+            position: fixed; top: 0; left: 0; right: 0; padding: 50px 20px 20px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+            z-index: 90; display: flex; justify-content: space-between; pointer-events: none;
         }
-        .status-dot { display: inline-block; width: 10px; height: 10px; background: var(--primary); border-radius: 50%; margin-right: 5px; }
+
+        /* 難度對照表 */
+        .difficulty-legend {
+            position: fixed; top: 100px; right: 10px; z-index: 90;
+            display: flex; flex-direction: column; gap: 6px;
+        }
+        .diff-item { 
+            display: flex; align-items: center; gap: 6px; 
+            background: rgba(0,0,0,0.7); padding: 4px 10px; border-radius: 12px; font-size: 11px;
+        }
+        .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+        /* 底部操作面板 */
+        .bottom-panel {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: var(--panel); backdrop-filter: blur(20px);
+            padding: 15px 12px 35px; border-top: 1px solid #333;
+            display: flex; flex-direction: column; gap: 15px; z-index: 100;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+        }
+
+        /* 分區快速跳轉 (橫向滾動) */
+        .nav-scroll { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 5px; -webkit-overflow-scrolling: touch; }
+        .nav-btn { 
+            flex: 0 0 auto; background: #333; padding: 10px 18px; 
+            border-radius: 20px; font-size: 13px; border: 1px solid #444; color: #ddd;
+        }
+        .nav-btn:active { background: #555; }
+
+        /* 功能按鈕組 */
+        .action-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .btn {
+            background: #444; color: white; border: none; padding: 14px 5px;
+            border-radius: 14px; font-size: 11px; font-weight: bold;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .btn-home { background: var(--primary); color: #000; }
+        .btn-info { background: var(--info); }
+        .btn-sos { background: var(--danger); }
     </style>
 </head>
 <body>
 
 <div class="top-bar">
-    <div><span class="status-dot"></span> 野澤溫泉 2026</div>
-    <div style="font-size: 12px; opacity: 0.8;" onclick="location.reload()">重新整理</div>
+    <div style="font-weight: 900; letter-spacing: 1px;">NOZAWA ONSEN 2026</div>
+    <div style="font-size: 11px; opacity: 0.6;">雙指縮放 / 自由拖曳</div>
+</div>
+
+<div class="difficulty-legend">
+    <div class="diff-item"><div class="dot" style="background:#27ae60"></div> 初級</div>
+    <div class="diff-item"><div class="dot" style="background:#e67e22"></div> 中級</div>
+    <div class="diff-item"><div class="dot" style="background:#c0392b"></div> 高級</div>
 </div>
 
 <div id="viewport">
-    <div id="map-wrapper">
-        <img src="nozawa_map.jpg" id="ski-map"> <div class="zone" style="top:5%; left:45%; width:25%; height:20%;" onclick="zoomTo(2.8, -10, 35)"></div>
-        <div class="zone" style="top:25%; left:15%; width:30%; height:25%;" onclick="zoomTo(2.3, 25, 10)"></div>
-        <div class="zone" style="top:50%; left:5%; width:30%; height:30%;" onclick="zoomTo(2.2, 30, -15)"></div>
-        <div class="zone" style="top:45%; left:35%; width:35%; height:35%;" onclick="zoomTo(2.2, -5, -15)"></div>
-        <div class="zone" style="top:55%; left:65%; width:35%; height:40%;" onclick="zoomTo(2.0, -35, -20)"></div>
+    <div id="map-element">
+        <img src="nozawa_map.jpg" id="ski-map">
+        
+        <div class="zone" style="top:5%; left:45%; width:25%; height:20%;" onclick="focusOn(3.5, 55, 15)"></div> <div class="zone" style="top:25%; left:15%; width:30%; height:25%;" onclick="focusOn(2.8, 30, 35)"></div> <div class="zone" style="top:50%; left:5%; width:30%; height:30%;" onclick="focusOn(2.5, 20, 65)"></div> <div class="zone" style="top:45%; left:35%; width:35%; height:35%;" onclick="focusOn(2.5, 50, 60)"></div> <div class="zone" style="top:55%; left:65%; width:35%; height:40%;" onclick="focusOn(2.2, 80, 75)"></div> </div>
+</div>
+
+<div class="bottom-panel">
+    <div class="nav-scroll">
+        <div class="nav-btn" onclick="focusOn(3.5, 55, 15)">山頂 Yamabiko</div>
+        <div class="nav-btn" onclick="focusOn(2.8, 30, 35)">樂園 Paradise</div>
+        <div class="nav-btn" onclick="focusOn(2.5, 20, 65)">日影 Hikage</div>
+        <div class="nav-btn" onclick="focusOn(2.5, 50, 60)">長坂 Nagasaka</div>
+        <div class="nav-btn" onclick="focusOn(2.2, 80, 75)">柄澤 Karasawa</div>
+    </div>
+
+    <div class="action-grid">
+        <button class="btn btn-home" onclick="resetMap()">全身圖</button>
+        <button class="btn btn-info" onclick="focusOn(2.2, 92, 50)">資訊清單</button>
+        <button class="btn" onclick="window.open('https://nozawaski.com/report/')">纜車狀態</button>
+        <button class="btn btn-sos" onclick="window.location.href='tel:0269853456'">救援 SOS</button>
     </div>
 </div>
 
-<div class="controls">
-    <button class="btn" onclick="resetMap()">全圖<br>Reset</button>
-    <button class="btn" onclick="window.open('https://nozawaski.com/report/')">纜車<br>Status</button>
-    <button class="btn" onclick="window.open('https://nozawaski.com/live-camera/')">雪況<br>Cams</button>
-    <button class="btn btn-emergency" onclick="window.location.href='tel:0269853456'">救援<br>SOS</button>
-</div>
-
 <script>
-    const wrapper = document.getElementById('map-wrapper');
+    const elem = document.getElementById('map-element');
     
-    function zoomTo(scale, x, y) {
-        wrapper.style.transform = `scale(${scale}) translate(${x}%, ${y}%)`;
+    // 初始化 Panzoom：允許平移與雙指縮放
+    const pz = Panzoom(elem, {
+        maxScale: 6,
+        minScale: 1,
+        contain: 'outside',
+        animate: true,
+        duration: 400,
+        easing: 'cubic-bezier(0.2, 0, 0.2, 1)'
+    });
+
+    // 啟用滾輪/觸控縮放
+    elem.parentElement.addEventListener('wheel', pz.zoomWithWheel);
+
+    /**
+     * 智能對焦函數
+     * @param {number} s - 縮放倍率
+     * @param {number} xPercent - 圖片中心 X 座標百分比 (0-100)
+     * @param {number} yPercent - 圖片中心 Y 座標百分比 (0-100)
+     */
+    function focusOn(s, xPercent, yPercent) {
+        // 輕微震動回饋 (Android 支援)
+        if (navigator.vibrate) navigator.vibrate(40);
+        
+        pz.zoom(s);
+        
+        setTimeout(() => {
+            const rect = elem.getBoundingClientRect();
+            // 計算讓該百分比座標移動到螢幕中心的位移量
+            const targetX = -(rect.width * (xPercent / 100) - window.innerWidth / 2);
+            const targetY = -(rect.height * (yPercent / 100) - window.innerHeight / 2);
+            pz.pan(targetX, targetY);
+        }, 50);
     }
 
     function resetMap() {
-        wrapper.style.transform = `scale(1) translate(0, 0)`;
+        if (navigator.vibrate) navigator.vibrate(20);
+        pz.reset();
     }
 
-    // 雙擊也重置
-    document.addEventListener('dblclick', (e) => { e.preventDefault(); resetMap(); });
+    // 雙擊畫面重置為全身圖
+    document.getElementById('viewport').addEventListener('dblclick', (e) => {
+        e.preventDefault();
+        resetMap();
+    });
+
+    // 修正 iOS 10+ 禁止縮放的行為，確保 App 體驗
+    document.addEventListener('gesturestart', (e) => {
+        e.preventDefault();
+    });
 </script>
 
 </body>

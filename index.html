@@ -4,95 +4,81 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>野澤 2026 地圖</title>
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <title>野澤滑雪助手 2026</title>
     <style>
-        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-        body { margin: 0; background: #1a1a1a; height: 100vh; overflow: hidden; font-family: sans-serif; }
-        
-        /* App 容器 */
-        #app { width: 100vw; height: 100vh; position: relative; display: flex; align-items: center; justify-content: center; }
+        :root { --primary: #2ecc71; --danger: #e74c3c; --bg: #121212; }
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; touch-action: manipulation; }
+        body { margin: 0; background: var(--bg); height: 100vh; overflow: hidden; font-family: -apple-system, sans-serif; }
 
-        /* 地圖縮放核心 */
-        #map-wrapper {
-            transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-            transform-origin: center center;
-            position: relative;
+        /* 地圖區域 */
+        #viewport { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        #map-wrapper { transition: transform 0.4s cubic-bezier(0.2, 0, 0.2, 1); transform-origin: center center; position: relative; }
+        #ski-map { display: block; width: 100vw; height: auto; }
+
+        /* 透明點擊熱區 */
+        .zone { position: absolute; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
+
+        /* 下方大按鈕選單 (適合戴手套操作) */
+        .controls {
+            position: fixed; bottom: 20px; left: 10px; right: 10px;
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+            z-index: 100;
         }
-
-        #ski-map { display: block; width: 100vw; height: auto; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
-
-        /* 熱區樣式 (開發完畢可將透明度設為 0) */
-        .zone {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 12px;
-            text-shadow: 1px 1px 2px black;
-            font-weight: bold;
+        .btn {
+            background: rgba(40, 40, 40, 0.9); color: white; border: none; padding: 12px 5px;
+            border-radius: 12px; font-size: 11px; font-weight: bold; text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5); backdrop-filter: blur(5px);
         }
+        .btn:active { background: var(--primary); }
+        .btn-emergency { background: var(--danger); grid-column: span 1; }
 
-        /* 頂部 UI */
-        .ui-top {
-            position: fixed; top: 40px; left: 20px; z-index: 10;
-            color: white; background: rgba(0,0,0,0.6);
-            padding: 8px 15px; border-radius: 20px; font-size: 14px;
-            pointer-events: none;
+        /* 頂部資訊欄 */
+        .top-bar {
+            position: fixed; top: 0; left: 0; right: 0; padding: 45px 15px 15px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+            color: white; z-index: 90; display: flex; justify-content: space-between; align-items: center;
         }
-
-        /* 下方重設按鈕 */
-        .btn-reset {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-            z-index: 10; background: #e74c3c; color: white; border: none;
-            padding: 12px 30px; border-radius: 25px; font-size: 16px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
+        .status-dot { display: inline-block; width: 10px; height: 10px; background: var(--primary); border-radius: 50%; margin-right: 5px; }
     </style>
 </head>
 <body>
 
-<div class="ui-top">點擊區域放大 / 雙擊地圖回原狀</div>
+<div class="top-bar">
+    <div><span class="status-dot"></span> 野澤溫泉 2026</div>
+    <div style="font-size: 12px; opacity: 0.8;" onclick="location.reload()">重新整理</div>
+</div>
 
-<div id="app">
-    <div id="map-wrapper" id="mapWrapper">
-        <img src="image_701547.jpg" id="ski-map">
-
-        <div class="zone" style="top:5%; left:45%; width:25%; height:20%;" onclick="zoomTo(2.8, -10, 35)">山頂/山彥區</div>
-        <div class="zone" style="top:25%; left:15%; width:30%; height:25%;" onclick="zoomTo(2.3, 25, 10)">上之平/樂園</div>
-        <div class="zone" style="top:50%; left:5%; width:30%; height:30%;" onclick="zoomTo(2.2, 30, -15)">日影區/長坂聯絡</div>
-        <div class="zone" style="top:45%; left:35%; width:35%; height:35%;" onclick="zoomTo(2.2, -5, -15)">長坂中心/小毛無</div>
-        <div class="zone" style="top:55%; left:65%; width:35%; height:40%;" onclick="zoomTo(2.0, -35, -20)">柄澤/大引</div>
+<div id="viewport">
+    <div id="map-wrapper">
+        <img src="nozawa_map.jpg" id="ski-map"> <div class="zone" style="top:5%; left:45%; width:25%; height:20%;" onclick="zoomTo(2.8, -10, 35)"></div>
+        <div class="zone" style="top:25%; left:15%; width:30%; height:25%;" onclick="zoomTo(2.3, 25, 10)"></div>
+        <div class="zone" style="top:50%; left:5%; width:30%; height:30%;" onclick="zoomTo(2.2, 30, -15)"></div>
+        <div class="zone" style="top:45%; left:35%; width:35%; height:35%;" onclick="zoomTo(2.2, -5, -15)"></div>
+        <div class="zone" style="top:55%; left:65%; width:35%; height:40%;" onclick="zoomTo(2.0, -35, -20)"></div>
     </div>
 </div>
 
-<button class="btn-reset" onclick="resetMap()">回全身圖</button>
+<div class="controls">
+    <button class="btn" onclick="resetMap()">全圖<br>Reset</button>
+    <button class="btn" onclick="window.open('https://nozawaski.com/report/')">纜車<br>Status</button>
+    <button class="btn" onclick="window.open('https://nozawaski.com/live-camera/')">雪況<br>Cams</button>
+    <button class="btn btn-emergency" onclick="window.location.href='tel:0269853456'">救援<br>SOS</button>
+</div>
 
 <script>
     const wrapper = document.getElementById('map-wrapper');
-    let isZoomed = false;
-
+    
     function zoomTo(scale, x, y) {
         wrapper.style.transform = `scale(${scale}) translate(${x}%, ${y}%)`;
-        isZoomed = true;
     }
 
     function resetMap() {
         wrapper.style.transform = `scale(1) translate(0, 0)`;
-        isZoomed = false;
     }
 
-    // 雙擊事件
-    document.addEventListener('dblclick', (e) => {
-        e.preventDefault();
-        resetMap();
-    });
-
-    // 針對手機最佳化：防止縮放手勢干擾
-    document.addEventListener('gesturestart', (e) => e.preventDefault());
+    // 雙擊也重置
+    document.addEventListener('dblclick', (e) => { e.preventDefault(); resetMap(); });
 </script>
 
 </body>

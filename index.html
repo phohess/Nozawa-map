@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>野澤滑雪助手 V6</title>
+    <title>野澤滑雪助手 V7</title>
     <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
     <style>
         :root { 
@@ -15,50 +15,41 @@
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; touch-action: none; }
         body { margin: 0; background: var(--bg); color: white; height: 100vh; overflow: hidden; font-family: sans-serif; }
 
-        /* 地圖容器 */
+        /* 地圖區域容器 */
         #viewport { width: 100vw; height: 100vh; position: relative; overflow: hidden; background: #1a1a1a; }
         #map-element { width: 100%; position: relative; transform-origin: 0 0; }
         #ski-map { width: 100%; display: block; filter: contrast(1.1); pointer-events: none; }
 
-        /* 頂部與難度標示 (避開劉海) */
-        .top-ui {
-            position: fixed; top: env(safe-area-inset-top, 20px); left: 15px; right: 15px;
-            z-index: 90; pointer-events: none;
-        }
-        .difficulty-legend {
-            margin-top: 10px; display: flex; flex-direction: column; gap: 5px; align-items: flex-end;
-        }
-        .diff-item { background: rgba(0,0,0,0.7); padding: 4px 10px; border-radius: 10px; font-size: 10px; display: flex; align-items: center; gap: 5px; }
-
-        /* 底部面板：解決按鈕跑版關鍵 */
+        /* 底部控制面板：使用彈性佈局確保按鈕不跑版 */
         .bottom-panel {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: var(--panel); border-top: 1px solid #333;
-            padding: 10px 10px calc(env(safe-area-inset-bottom, 10px) + 10px);
+            /* 考慮手機安全區域，防止按鈕太低 */
+            padding: 10px 10px calc(env(safe-area-inset-bottom, 10px) + 5px);
             z-index: 100; display: flex; flex-direction: column; gap: 10px;
         }
 
-        /* 滾動標籤列 */
+        /* 標籤滾動條 */
         .nav-scroll { 
             display: flex; overflow-x: auto; gap: 8px; 
             padding-bottom: 5px; -webkit-overflow-scrolling: touch;
         }
         .nav-tag { 
-            flex: 0 0 auto; background: #333; padding: 8px 12px; 
-            border-radius: 15px; font-size: 12px; border: 1px solid #444; color: #fff;
+            flex: 0 0 auto; background: #333; padding: 10px 15px; 
+            border-radius: 20px; font-size: 13px; border: 1px solid #444; color: #fff;
         }
 
-        /* 按鈕網格：使用 Flex 確保不超出螢幕 */
+        /* 按鈕網格：強制平分螢幕寬度，解決跑版問題 */
         .action-grid { 
-            display: flex; width: 100%; gap: 8px; 
+            display: flex; width: 100%; gap: 10px; 
         }
         .btn {
-            flex: 1; /* 讓所有按鈕平分寬度 */
+            flex: 1; /* 讓 4 個按鈕平分空間 */
             background: #444; color: white; border: none; 
-            padding: 12px 2px; border-radius: 12px;
-            font-size: 11px; font-weight: bold;
+            padding: 15px 0; border-radius: 12px;
+            font-size: 12px; font-weight: bold;
             display: flex; align-items: center; justify-content: center;
-            min-width: 0; /* 防止文字撐開按鈕 */
+            min-width: 0; /* 防止字體過大撐破寬度 */
         }
         .btn-home { background: var(--primary); color: #000; }
         .btn-info { background: var(--info); }
@@ -66,15 +57,6 @@
     </style>
 </head>
 <body>
-
-<div class="top-ui">
-    <div style="font-weight: 900; font-size: 14px;">NOZAWA 2026</div>
-    <div class="difficulty-legend">
-        <div class="diff-item"><span style="color:#27ae60">●</span> 初級</div>
-        <div class="diff-item"><span style="color:#e67e22">●</span> 中級</div>
-        <div class="diff-item"><span style="color:#c0392b">●</span> 高級</div>
-    </div>
-</div>
 
 <div id="viewport">
     <div id="map-element">
@@ -84,16 +66,16 @@
 
 <div class="bottom-panel">
     <div class="nav-scroll">
-        <div class="nav-tag" onclick="focusOn(3.5, 55, 12)">山頂</div>
-        <div class="nav-tag" onclick="focusOn(2.8, 30, 35)">樂園</div>
-        <div class="nav-tag" onclick="focusOn(2.5, 20, 62)">日影</div>
-        <div class="nav-tag" onclick="focusOn(2.5, 52, 60)">長坂</div>
-        <div class="nav-tag" onclick="focusOn(2.2, 82, 75)">柄澤</div>
+        <div class="nav-tag" onclick="focusOn(3.8, 55, 12)">山頂 Yamabiko</div>
+        <div class="nav-tag" onclick="focusOn(3.0, 30, 35)">樂園 Paradise</div>
+        <div class="nav-tag" onclick="focusOn(2.8, 20, 62)">日影 Hikage</div>
+        <div class="nav-tag" onclick="focusOn(2.8, 52, 60)">長坂 Nagasaka</div>
+        <div class="nav-tag" onclick="focusOn(2.5, 82, 75)">柄澤 Karasawa</div>
     </div>
 
     <div class="action-grid">
         <button class="btn btn-home" onclick="resetMap()">全身圖</button>
-        <button class="btn btn-info" onclick="focusOn(2.4, 93, 50)">資訊欄</button>
+        <button class="btn btn-info" onclick="focusOn(2.5, 93, 50)">資訊清單</button>
         <button class="btn" onclick="window.open('https://nozawaski.com/report/')">纜車狀態</button>
         <button class="btn btn-sos" onclick="window.location.href='tel:0269853456'">救援 SOS</button>
     </div>
@@ -103,36 +85,32 @@
     const elem = document.getElementById('map-element');
     const img = document.getElementById('ski-map');
 
+    // 初始化 Panzoom
     const pz = Panzoom(elem, {
         maxScale: 6,
         minScale: 1,
         contain: 'outside',
         animate: true,
-        duration: 350
+        duration: 400
     });
 
-    document.getElementById('viewport').addEventListener('wheel', pz.zoomWithWheel);
+    // 區域精確對焦邏輯
+    function focusOn(scale, xPct, yPct) {
+        if (navigator.vibrate) navigator.vibrate(50);
 
-    /**
-     * 新版精確對焦：修正座標跑掉問題
-     */
-    function focusOn(s, xPct, yPct) {
-        if (navigator.vibrate) navigator.vibrate(40);
-
-        // 獲取圖片當前實際呈現的寬高 (未縮放前)
         const mapW = img.offsetWidth;
         const mapH = img.offsetHeight;
 
-        // 計算縮放後的目標點絕對位置
-        const targetX = (mapW * (xPct / 100)) * s;
-        const targetY = (mapH * (yPct / 100)) * s;
+        // 計算對焦中心：縮放後要將哪個像素點移到螢幕中心
+        const targetX = (mapW * (xPct / 100)) * scale;
+        const targetY = (mapH * (yPct / 100)) * scale;
 
-        // 計算平移量：讓目標點出現在螢幕中心
-        // 考慮到下方按鈕面板遮擋，中心點向上偏移 50px
+        // 計算位移量 (加入視窗半寬高補償)
+        // Y 軸額外向上補償 60px 以避開底部控制面板
         const panX = (window.innerWidth / 2) - targetX;
-        const panY = (window.innerHeight / 2) - targetY - 50;
+        const panY = (window.innerHeight / 2) - targetY - 60;
 
-        pz.zoom(s);
+        pz.zoom(scale);
         setTimeout(() => {
             pz.pan(panX, panY);
         }, 50);
@@ -142,11 +120,9 @@
         pz.reset();
     }
 
-    // 雙擊重置
-    document.getElementById('viewport').addEventListener('dblclick', (e) => {
-        e.preventDefault();
-        resetMap();
-    });
+    // 啟用雙指縮放
+    document.getElementById('viewport').addEventListener('wheel', pz.zoomWithWheel);
+    document.getElementById('viewport').addEventListener('dblclick', resetMap);
 </script>
 
 </body>

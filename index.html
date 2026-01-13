@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>野澤 2026 地圖</title>
+    <style>
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        body { margin: 0; background: #1a1a1a; height: 100vh; overflow: hidden; font-family: sans-serif; }
+        
+        /* App 容器 */
+        #app { width: 100vw; height: 100vh; position: relative; display: flex; align-items: center; justify-content: center; }
+
+        /* 地圖縮放核心 */
+        #map-wrapper {
+            transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            transform-origin: center center;
+            position: relative;
+        }
+
+        #ski-map { display: block; width: 100vw; height: auto; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+
+        /* 熱區樣式 (開發完畢可將透明度設為 0) */
+        .zone {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            text-shadow: 1px 1px 2px black;
+            font-weight: bold;
+        }
+
+        /* 頂部 UI */
+        .ui-top {
+            position: fixed; top: 40px; left: 20px; z-index: 10;
+            color: white; background: rgba(0,0,0,0.6);
+            padding: 8px 15px; border-radius: 20px; font-size: 14px;
+            pointer-events: none;
+        }
+
+        /* 下方重設按鈕 */
+        .btn-reset {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            z-index: 10; background: #e74c3c; color: white; border: none;
+            padding: 12px 30px; border-radius: 25px; font-size: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+
+<div class="ui-top">點擊區域放大 / 雙擊地圖回原狀</div>
+
+<div id="app">
+    <div id="map-wrapper" id="mapWrapper">
+        <img src="image_701547.jpg" id="ski-map">
+
+        <div class="zone" style="top:5%; left:45%; width:25%; height:20%;" onclick="zoomTo(2.8, -10, 35)">山頂/山彥區</div>
+        <div class="zone" style="top:25%; left:15%; width:30%; height:25%;" onclick="zoomTo(2.3, 25, 10)">上之平/樂園</div>
+        <div class="zone" style="top:50%; left:5%; width:30%; height:30%;" onclick="zoomTo(2.2, 30, -15)">日影區/長坂聯絡</div>
+        <div class="zone" style="top:45%; left:35%; width:35%; height:35%;" onclick="zoomTo(2.2, -5, -15)">長坂中心/小毛無</div>
+        <div class="zone" style="top:55%; left:65%; width:35%; height:40%;" onclick="zoomTo(2.0, -35, -20)">柄澤/大引</div>
+    </div>
+</div>
+
+<button class="btn-reset" onclick="resetMap()">回全身圖</button>
+
+<script>
+    const wrapper = document.getElementById('map-wrapper');
+    let isZoomed = false;
+
+    function zoomTo(scale, x, y) {
+        wrapper.style.transform = `scale(${scale}) translate(${x}%, ${y}%)`;
+        isZoomed = true;
+    }
+
+    function resetMap() {
+        wrapper.style.transform = `scale(1) translate(0, 0)`;
+        isZoomed = false;
+    }
+
+    // 雙擊事件
+    document.addEventListener('dblclick', (e) => {
+        e.preventDefault();
+        resetMap();
+    });
+
+    // 針對手機最佳化：防止縮放手勢干擾
+    document.addEventListener('gesturestart', (e) => e.preventDefault());
+</script>
+
+</body>
+</html>
